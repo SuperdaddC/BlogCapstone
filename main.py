@@ -1,17 +1,19 @@
+import os
+import smtplib
 from datetime import date
 from flask import Flask, abort, render_template, redirect, url_for, flash, request, g
 from flask_bootstrap import Bootstrap5
 from flask_ckeditor import CKEditor
-from flask_gravatar import Gravatar
+# from flask_gravatar import Gravatar
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user, login_required
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+# from flask_migrate import Migrate
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy.orm import relationship, Mapped, mapped_column, DeclarativeBase
-from sqlalchemy import ForeignKey, Integer
-from typing import List
-# Import your forms from the forms.py
+# from sqlalchemy.orm import relationship, Mapped, mapped_column, DeclarativeBase
+# from sqlalchemy import ForeignKey, Integer
+# from typing import List
+# # Import your forms from the forms.py
 from forms import *
 
 '''
@@ -28,16 +30,16 @@ This will install the packages from the requirements.txt for this project.
 '''
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
+app.config['SECRET_KEY'] = os.environ.get('FLASK_KEY')
 ckeditor = CKEditor(app)
 Bootstrap5(app)
 
-# TODO: Configure Flask-Login
+# TODO: Configure Flask-Login - DONE
 login_manager = LoginManager()
 login_manager.init_app(app)
 
 # CONNECT TO DB
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_URI', 'sqlite:///posts.db')
 db = SQLAlchemy()
 db.init_app(app)
 
@@ -267,12 +269,28 @@ def delete_post(post_id):
 def about():
     return render_template("about.html")
 
-
-@app.route("/contact")
+@app.route("/contact", methods=['POST', 'GET'])
 def contact():
+    if request.method == 'POST':
+        message = request.form.get('message')
+        phone = request.form.get('phone')
+        email = request.form.get('email')
+        name = request.form.get('name')
+        my_email = os.environ.get('MY_EMAIL')
+        password = os.environ.get('MY_EMAIL_PASSWORD')
+        with smtplib.SMTP("smtp.gmail.com", 587) as connection:
+            connection.starttls()
+            connection.login(user=my_email, password=password)
+            connection.sendmail(
+                from_addr=my_email,
+                to_addrs='mjcolyer@gmail.com',
+                msg=f'Subject:Message From your Blog\n\n from: {name}\nemail: {email}\nphone: {phone}\n-----------\n{message}'
+            )
+        flash('Your message has been sent. Thanks for your input')
+        return redirect(url_for('home'))
     return render_template("contact.html")
 
 
 if __name__ == "__main__":
     create_tables()
-    app.run(debug=True, port=5002)
+    app.run(debug=False, port=5002)

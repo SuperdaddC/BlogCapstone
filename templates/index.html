@@ -16,6 +16,9 @@
           {% endif %}
           </span>
           <span class="subheading">A collection of random musings.</span>
+          {% for message in get_flashed_messages() %}
+            <span>{{message}}</span>
+          {% endfor %}
         </div>
       </div>
     </div>
