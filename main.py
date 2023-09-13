@@ -237,7 +237,6 @@ def add_new_post():
 @admin_only
 def edit_post(post_id):
     post = db.get_or_404(BlogPost, post_id)
-    print('this is the post', post.title)
     edit_form = CreatePostForm(
         author=post.author,
         title=post.title,
